@@ -123,7 +123,7 @@ async function fetchQuestions() {
 
     const { data, error } = await supabase
       .from('questions')
-      .select('id, question_text, option_a, option_b, option_c, option_d, correct_option, exam_id');
+      .select('id, question_text, option_a, option_b, option_c, option_d, correct_option, exam_id, explanation');
 
     if (error) throw error;
 
@@ -299,6 +299,12 @@ function displayResults(studentName, score, total, selectedAnswers) {
         </div>
         ` : ''}
       </div>
+      ${q.explanation ? `
+      <div class="review-explanation">
+        <i class="fa-solid fa-lightbulb"></i>
+        <div><strong>Explanation:</strong> ${escapeHtml(q.explanation)}</div>
+      </div>
+      ` : ''}
     `;
     reviewsContainer.appendChild(reviewCard);
   });
