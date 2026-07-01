@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A premium online examination system. Enter your name, answer the questions, and submit to view your detailed results instantly.">
+  <title>Premium Exam Portal</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  <!-- Supabase JS Client via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <!-- Custom Alert Toast -->
+  <div id="toast" class="toast-container hidden">
+    <div class="toast-content">
+      <i class="fa-solid fa-circle-exclamation toast-icon"></i>
+      <span id="toast-message">Please fill in all fields.</span>
+    </div>
+  </div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+        <span class="logo-text">Assess<span>ify</span></span>
+      </div>
+      <div class="header-badge">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span>Active Session</span>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Loading State -->
+      <div id="loading-state" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading exam questions from database...</p>
+      </div>
+
+      <!-- Error State -->
+      <div id="error-state" class="error-state hidden">
+        <div class="error-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <h3>Failed to load questions</h3>
+        <p id="error-message">Could not connect to Supabase. Please ensure your credentials are set correctly in app.js.</p>
+        <button id="retry-btn" class="btn btn-secondary">
+          <i class="fa-solid fa-arrows-rotate"></i> Retry Connection
+        </button>
+      </div>
+
+      <!-- Exam Screen -->
+      <section id="exam-screen" class="exam-screen hidden">
+        <!-- Student Info Card -->
+        <div class="card info-card">
+          <div class="card-header-accent"></div>
+          <div class="info-card-content">
+            <div class="info-icon-wrapper">
+              <i class="fa-solid fa-user-pen"></i>
+            </div>
+            <div class="input-group">
+              <label for="student-name" class="input-label">Your Full Name</label>
+              <input type="text" id="student-name" placeholder="Enter your name to begin..." autocomplete="off" required>
+              <span class="input-underline"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Questions List Form -->
+        <form id="exam-form" class="exam-form">
+          <div id="questions-container" class="questions-container">
+            <!-- Questions dynamically injected here -->
+          </div>
+
+          <!-- Submit Area -->
+          <div class="submit-container">
+            <div class="submit-warning">
+              <i class="fa-solid fa-circle-info"></i>
+              <span>Double-check all answers before submitting. You cannot edit them later.</span>
+            </div>
+            <button type="submit" id="submit-exam-btn" class="btn btn-primary btn-submit">
+              <span>Submit Exam</span>
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Results Screen -->
+      <section id="results-screen" class="results-screen hidden">
+        <div class="card results-card">
+          <div class="card-header-accent success-accent"></div>
+          <div class="results-content">
+            <div class="results-badge"><i class="fa-solid fa-square-poll-vertical"></i> Score Card</div>
+            <h2>Exam Completed!</h2>
+            <p class="student-greeting">Great job, <strong id="result-student-name">Student</strong>!</p>
+            
+            <!-- Dynamic Score Circle -->
+            <div class="score-circle-wrapper">
+              <svg class="score-svg" viewBox="0 0 100 100">
+                <circle class="score-circle-bg" cx="50" cy="50" r="45"></circle>
+                <circle id="score-circle-progress" class="score-circle-progress" cx="50" cy="50" r="45"></circle>
+              </svg>
+              <div class="score-text-container">
+                <span id="score-fraction" class="score-fraction">0 / 0</span>
+                <span id="score-percentage" class="score-percentage">0%</span>
+              </div>
+            </div>
+
+            <div class="score-summary-pills">
+              <div class="summary-pill correct">
+                <i class="fa-solid fa-circle-check"></i>
+                <span id="summary-correct">0 Correct</span>
+              </div>
+              <div class="summary-pill incorrect">
+                <i class="fa-solid fa-circle-xmark"></i>
+                <span id="summary-incorrect">0 Incorrect</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Review Section -->
+        <div class="review-section">
+          <div class="section-title-wrapper">
+            <h3><i class="fa-solid fa-clipboard-question"></i> Detailed Question Review</h3>
+            <span class="badge">Answers Analysis</span>
+          </div>
+          <div id="reviews-container" class="reviews-container">
+            <!-- Question reviews dynamically injected here -->
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="results-actions">
+          <button id="restart-btn" class="btn btn-secondary">
+            <i class="fa-solid fa-rotate-left"></i> Retake Exam
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>&copy; 2026 Assessify Exam System. Built with Supabase & Vanilla JS.</p>
+    </footer>
+  </div>
+
+  <!-- Custom Script -->
+  <script src="app.js"></script>
+</body>
+</html>
