@@ -12,8 +12,13 @@ const loadingState = document.getElementById('loading-state');
 const errorState = document.getElementById('error-state');
 const errorMessage = document.getElementById('error-message');
 const retryBtn = document.getElementById('retry-btn');
+const setupScreen = document.getElementById('setup-screen');
 const examScreen = document.getElementById('exam-screen');
 const resultsScreen = document.getElementById('results-screen');
+const examSelect = document.getElementById('exam-select');
+const startExamBtn = document.getElementById('start-exam-btn');
+const activeStudentName = document.getElementById('active-student-name');
+const activeExamName = document.getElementById('active-exam-name');
 const questionsContainer = document.getElementById('questions-container');
 const examForm = document.getElementById('exam-form');
 const studentNameInput = document.getElementById('student-name');
@@ -30,7 +35,11 @@ const summaryIncorrect = document.getElementById('summary-incorrect');
 const reviewsContainer = document.getElementById('reviews-container');
 const restartBtn = document.getElementById('restart-btn');
 
+// App State Variables
+let allQuestions = [];
 let questions = [];
+let selectedExamId = '';
+let studentName = '';
 
 // Helper: Check if values are placeholder credentials
 function isPlaceholder(value) {
@@ -55,6 +64,7 @@ function escapeHtml(str) {
 function showLoading() {
   loadingState.classList.remove('hidden');
   errorState.classList.add('hidden');
+  setupScreen.classList.add('hidden');
   examScreen.classList.add('hidden');
   resultsScreen.classList.add('hidden');
 }
@@ -63,6 +73,15 @@ function showError(message) {
   loadingState.classList.add('hidden');
   errorState.classList.remove('hidden');
   errorMessage.textContent = message;
+  setupScreen.classList.add('hidden');
+  examScreen.classList.add('hidden');
+  resultsScreen.classList.add('hidden');
+}
+
+function showSetup() {
+  loadingState.classList.add('hidden');
+  errorState.classList.add('hidden');
+  setupScreen.classList.remove('hidden');
   examScreen.classList.add('hidden');
   resultsScreen.classList.add('hidden');
 }
@@ -70,6 +89,7 @@ function showError(message) {
 function showExam() {
   loadingState.classList.add('hidden');
   errorState.classList.add('hidden');
+  setupScreen.classList.add('hidden');
   examScreen.classList.remove('hidden');
   resultsScreen.classList.add('hidden');
 }
@@ -103,7 +123,7 @@ async function fetchQuestions() {
 
     const { data, error } = await supabase
       .from('questions')
-      .select('id, question_text, option_a, option_b, option_c, option_d, correct_option');
+      .select('id, question_text, option_a, option_b, option_c, option_d, correct_option, exam_id');
 
     if (error) throw error;
 
@@ -112,9 +132,24 @@ async function fetchQuestions() {
       return;
     }
 
-    questions = data;
-    renderQuestions();
-    showExam();
+    allQuestions = data;
+    
+    // Extract unique exam IDs, default empty/null values to 'General'
+    const exams = [...new Set(allQuestions.map(q => {
+      const examName = q.exam_id ? q.exam_id.trim() : 'General';
+      return examName !== '' ? examName : 'General';
+    }))];
+    
+    // Populate select dropdown
+    examSelect.innerHTML = '<option value="" disabled selected>Choose an exam...</option>';
+    exams.forEach(exam => {
+      const option = document.createElement('option');
+      option.value = exam;
+      option.textContent = exam;
+      examSelect.appendChild(option);
+    });
+
+    showSetup();
   } catch (err) {
     console.error("Fetch error details:", err);
     showError("Failed to fetch questions: " + (err.message || err));
@@ -165,7 +200,7 @@ function renderQuestions() {
 }
 
 // Insert result row to Supabase
-async function submitResultsToDb(studentName, score, total) {
+async function submitResultsToDb(studentName, score, total, examId) {
   if (isPlaceholder(SUPABASE_URL) || isPlaceholder(SUPABASE_ANON_KEY)) {
     console.warn("Supabase placeholder detected. Skipping DB entry.");
     return;
@@ -181,7 +216,8 @@ async function submitResultsToDb(studentName, score, total) {
         {
           student_name: studentName,
           score: score,
-          total: total
+          total: total,
+          exam_id: examId
         }
       ]);
 
@@ -199,6 +235,7 @@ async function submitResultsToDb(studentName, score, total) {
 // Display results screen
 function displayResults(studentName, score, total, selectedAnswers) {
   examScreen.classList.add('hidden');
+  setupScreen.classList.add('hidden');
   resultsScreen.classList.remove('hidden');
   
   resultStudentName.textContent = studentName;
@@ -270,20 +307,43 @@ function displayResults(studentName, score, total, selectedAnswers) {
 }
 
 // Event Listeners
-examForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
+startExamBtn.addEventListener('click', () => {
+  studentName = studentNameInput.value.trim();
+  selectedExamId = examSelect.value;
   
-  const studentName = studentNameInput.value.trim();
-  
-  // 1. Validate Name
   if (!studentName) {
-    showToast("A name must be entered to submit!");
+    showToast("Please enter your name to start.");
     alert("Please enter your name.");
     studentNameInput.focus();
     return;
   }
   
-  // 2. Validate Questions answered
+  if (!selectedExamId) {
+    showToast("Please select an exam subject to start.");
+    alert("Please select an exam.");
+    examSelect.focus();
+    return;
+  }
+  
+  // Filter questions for the selected exam
+  questions = allQuestions.filter(q => {
+    const examName = q.exam_id ? q.exam_id.trim() : 'General';
+    const cleanExamName = examName !== '' ? examName : 'General';
+    return cleanExamName === selectedExamId;
+  });
+  
+  // Update header text
+  activeStudentName.textContent = studentName;
+  activeExamName.textContent = selectedExamId;
+  
+  renderQuestions();
+  showExam();
+});
+
+examForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  // 1. Validate Questions answered
   const selectedAnswers = {};
   let allAnswered = true;
   
@@ -302,7 +362,7 @@ examForm.addEventListener('submit', async (e) => {
     return;
   }
   
-  // 3. Calculate score
+  // 2. Calculate score
   let score = 0;
   questions.forEach(q => {
     const userChoice = selectedAnswers[q.id];
@@ -314,20 +374,21 @@ examForm.addEventListener('submit', async (e) => {
   
   const total = questions.length;
   
-  // 4. Save to Database
-  await submitResultsToDb(studentName, score, total);
+  // 3. Save to Database
+  await submitResultsToDb(studentName, score, total, selectedExamId);
   
-  // 5. Display Results & Review Screen
+  // 4. Display Results & Review Screen
   displayResults(studentName, score, total, selectedAnswers);
 });
 
-// Restart button listener
+// Restart button listener (Return to Setup Screen)
 restartBtn.addEventListener('click', () => {
   examForm.reset();
   studentNameInput.value = '';
+  examSelect.value = '';
   // Reset SVGs progress bar offset
   scoreCircleProgress.style.strokeDashoffset = 282.74;
-  showExam();
+  showSetup();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 

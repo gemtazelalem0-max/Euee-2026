@@ -56,19 +56,54 @@
         </button>
       </div>
 
+      <!-- Setup Screen (Name & Exam Selection) -->
+      <section id="setup-screen" class="setup-screen hidden">
+        <div class="card setup-card">
+          <div class="card-header-accent"></div>
+          <div class="setup-content">
+            <div class="setup-icon-wrapper">
+              <i class="fa-solid fa-file-signature"></i>
+            </div>
+            <h2>Welcome to Assessify</h2>
+            <p class="setup-subtitle">Enter your name and select an exam to begin.</p>
+            
+            <div class="setup-form-groups">
+              <div class="input-group">
+                <label for="student-name" class="input-label">Your Full Name</label>
+                <input type="text" id="student-name" placeholder="Enter your name..." autocomplete="off" required>
+                <span class="input-underline"></span>
+              </div>
+              
+              <div class="input-group">
+                <label for="exam-select" class="input-label">Select Exam Subject</label>
+                <select id="exam-select" required>
+                  <option value="" disabled selected>Choose an exam...</option>
+                  <!-- Populate dynamically -->
+                </select>
+                <span class="input-underline"></span>
+              </div>
+            </div>
+
+            <button id="start-exam-btn" class="btn btn-primary">
+              <span>Start Exam</span>
+              <i class="fa-solid fa-play"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- Exam Screen -->
       <section id="exam-screen" class="exam-screen hidden">
-        <!-- Student Info Card -->
-        <div class="card info-card">
-          <div class="card-header-accent"></div>
-          <div class="info-card-content">
-            <div class="info-icon-wrapper">
-              <i class="fa-solid fa-user-pen"></i>
+        <!-- Active Exam Header -->
+        <div class="card active-exam-header-card">
+          <div class="active-exam-header-content">
+            <div class="header-info-item">
+              <span class="active-label">Candidate:</span>
+              <strong id="active-student-name">--</strong>
             </div>
-            <div class="input-group">
-              <label for="student-name" class="input-label">Your Full Name</label>
-              <input type="text" id="student-name" placeholder="Enter your name to begin..." autocomplete="off" required>
-              <span class="input-underline"></span>
+            <div class="header-info-item">
+              <span class="active-label">Subject:</span>
+              <strong id="active-exam-name">--</strong>
             </div>
           </div>
         </div>
